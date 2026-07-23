@@ -6,6 +6,8 @@ import Map from '../views/fish/Map.vue'
 import Aquarium from '../views/fish/Aquarium.vue'
 import FishMarket from '../views/fish/FishMarket.vue'
 import Deposit from '../views/wallet/Deposit.vue'
+import DepositOverview from '../views/wallet/DepositOverview.vue'
+import DepositPayment from '../views/wallet/DepositPayment.vue'
 import Withdrawal from '../views/wallet/Withdrawal.vue'
 import Invite from '../views/referral/Invite.vue'
 import Team from '../views/referral/Team.vue'
@@ -67,6 +69,16 @@ const router = createRouter({
       path: '/m/pages/addbalance',
       name: 'deposit',
       component: Deposit,
+    },
+    {
+      path: '/m/pages/addbalance/overview',
+      name: 'deposit-overview',
+      component: DepositOverview,
+    },
+    {
+      path: '/m/pages/addbalance/payment',
+      name: 'deposit-payment',
+      component: DepositPayment,
     },
     {
       path: '/m/pages/settle',

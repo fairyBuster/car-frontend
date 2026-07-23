@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import AppShell from '../../components/layout/AppShell.vue'
 import {
   backProfileHeaderActions,
@@ -14,20 +15,12 @@ import {
 } from '../../services/api'
 
 const state = ref(getDepositData())
+const router = useRouter()
 const isLoadingOrders = ref(false)
 const orderError = ref('')
 const submitError = ref('')
 const isSubmitting = ref(false)
-const qrisPayment = ref({
-  orderNo: '',
-  amount: '',
-  transactionId: '',
-  channel: '',
-  expiredAt: '',
-  instruction: '',
-  qrisImage: '',
-  qrisData: '',
-})
+const QRIS_OVERVIEW_STORAGE_KEY = 'deposit_qris_overview'
 
 const depositMethods = [
   {
@@ -154,21 +147,8 @@ function resolveProviderMessage(payload) {
   return ''
 }
 
-function resetQrisPayment() {
-  qrisPayment.value = {
-    orderNo: '',
-    amount: '',
-    transactionId: '',
-    channel: '',
-    expiredAt: '',
-    instruction: '',
-    qrisImage: '',
-    qrisData: '',
-  }
-}
-
-function applyQrisPayment(payload) {
-  qrisPayment.value = {
+function persistQrisOverview(payload) {
+  const normalizedPayload = {
     orderNo: payload?.order_num || '-',
     amount: String(payload?.amount || state.value.amount || ''),
     transactionId: payload?.transaction_id || '-',
@@ -178,6 +158,8 @@ function applyQrisPayment(payload) {
     qrisImage: String(payload?.qris_image || '').replace(/[`'"]/g, '').trim(),
     qrisData: payload?.qris_data || '',
   }
+
+  sessionStorage.setItem(QRIS_OVERVIEW_STORAGE_KEY, JSON.stringify(normalizedPayload))
 }
 
 async function loadCompletedOrders() {
@@ -203,7 +185,6 @@ async function loadCompletedOrders() {
 
 async function submitDeposit() {
   submitError.value = ''
-  resetQrisPayment()
 
   const normalizedAmount = formatAmountInput(state.value.amount)
   const amount = Number(normalizedAmount)
@@ -250,8 +231,9 @@ async function submitDeposit() {
       return
     }
 
-    applyQrisPayment(result.data || {})
+    persistQrisOverview(result.data || {})
     await loadCompletedOrders()
+    await router.push({ name: 'deposit-overview' })
   } catch (error) {
     submitError.value =
       error instanceof Error ? error.message : 'Tidak bisa terhubung ke server deposit.'
@@ -322,20 +304,6 @@ onMounted(() => {
         <div v-if="submitError" class="deposit-alert is-error">
           <p>{{ submitError }}</p>
         </div>
-
-        <section
-          v-if="qrisPayment.qrisImage"
-          class="deposit-alert is-success"
-          aria-label="QRIS payment"
-        >
-   
-          <p><strong>Jumlah:</strong> Rp{{ qrisPayment.amount || '0' }}</p>
-
-          <p><strong>Channel:</strong> {{ qrisPayment.channel || 'QRIS' }}</p>
-          <p><strong>Kedaluwarsa:</strong> {{ qrisPayment.expiredAt || '-' }}</p>
-          <p>{{ qrisPayment.instruction }}</p>
-          <img :src="qrisPayment.qrisImage" alt="QRIS payment" class="deposit-qris-image" />
-        </section>
 
         <div class="deposit-flow-note">
           <strong>Flow:</strong>
@@ -464,15 +432,6 @@ onMounted(() => {
   font-size: 0.74rem;
   line-height: 1.4;
   color: #607985;
-}
-
-.deposit-qris-image {
-  display: block;
-  width: min(100%, 260px);
-  margin-top: 12px;
-  border-radius: 16px;
-  background: #ffffff;
-  padding: 8px;
 }
 
 @media (max-width: 640px) {
