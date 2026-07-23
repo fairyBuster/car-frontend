@@ -328,9 +328,9 @@ onMounted(() => {
           class="deposit-alert is-success"
           aria-label="QRIS payment"
         >
-          <p><strong>Order:</strong> {{ qrisPayment.orderNo || '-' }}</p>
+   
           <p><strong>Jumlah:</strong> Rp{{ qrisPayment.amount || '0' }}</p>
-          <p><strong>Transaction ID:</strong> {{ qrisPayment.transactionId || '-' }}</p>
+
           <p><strong>Channel:</strong> {{ qrisPayment.channel || 'QRIS' }}</p>
           <p><strong>Kedaluwarsa:</strong> {{ qrisPayment.expiredAt || '-' }}</p>
           <p>{{ qrisPayment.instruction }}</p>
