@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [vue()],
     server: {
-      allowedHosts: ['frontend.scagerwebsite.uk'],
+      allowedHosts: ['car-gowize.com'],
       proxy: {
         '/api': {
           target: env.BACKEND_PROXY_TARGET,

@@ -17,6 +17,70 @@ const isPurchasingKey = ref(null)
 const purchaseError = ref('')
 const purchaseSuccess = ref('')
 let popupTimerId = null
+const imageObjectUrls = new Set()
+
+function normalizeImageSource(value) {
+  if (typeof value !== 'string') {
+    return ''
+  }
+
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return ''
+  }
+
+  const unwrapped = trimmed.replace(/^`+|`+$/g, '').trim()
+  if (!unwrapped) {
+    return ''
+  }
+
+  if (/^https?:\/\//i.test(unwrapped)) {
+    const safeUrl = unwrapped.replace(/^http:\/\//i, 'https://')
+    try {
+      const parsed = new URL(safeUrl)
+      if (parsed.pathname.startsWith('/media/')) {
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`
+      }
+    } catch {
+      return safeUrl
+    }
+    return safeUrl
+  }
+
+  if (unwrapped.startsWith('/media/')) {
+    return unwrapped
+  }
+
+  return unwrapped
+}
+
+function clearImageObjectUrls() {
+  for (const url of imageObjectUrls) {
+    URL.revokeObjectURL(url)
+  }
+  imageObjectUrls.clear()
+}
+
+async function loadImageAsBlobUrl(value) {
+  const src = normalizeImageSource(value)
+  if (!src) {
+    return null
+  }
+
+  try {
+    const response = await fetch(src)
+    if (!response.ok) {
+      return null
+    }
+
+    const blob = await response.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    imageObjectUrls.add(objectUrl)
+    return objectUrl
+  } catch {
+    return null
+  }
+}
 
 function clearPurchasePopup() {
   purchaseError.value = ''
@@ -74,11 +138,13 @@ function extractProductsPage(payload) {
 function mapProductToAquariumItem(product) {
   const durationDays = Number(product?.duration) || 0
   const profitRate = Number(product?.profit_rate || 0)
+  const imageUrl = normalizeImageSource(product?.image)
   return {
     key: String(product?.id),
     productId: product?.id ?? null,
     name: product?.name || 'Unnamed Product',
-    image: product?.image || '/logo.png',
+    imageUrl,
+    image: '/logo.png',
     imageAlt: product?.name || 'Product image',
     tags: ['Contract', `${durationDays} hari`],
     levelLabel: `${profitRate.toFixed(0)}`,
@@ -149,6 +215,7 @@ async function loadAquarium() {
   loadError.value = ''
 
   try {
+    clearImageObjectUrls()
     const items = []
     let page = 1
     let hasNext = true
@@ -175,10 +242,20 @@ async function loadAquarium() {
       safety += 1
     }
 
-    state.value.items = items
+    const mappedItems = items
       .slice()
       .sort((left, right) => Number(left?.price || 0) - Number(right?.price || 0))
       .map(mapProductToAquariumItem)
+
+    state.value.items = await Promise.all(
+      mappedItems.map(async (item) => {
+        const blobUrl = await loadImageAsBlobUrl(item.imageUrl)
+        return {
+          ...item,
+          image: blobUrl || item.imageUrl || '/logo.png',
+        }
+      }),
+    )
   } catch (error) {
     loadError.value =
       error instanceof Error ? error.message : 'Tidak bisa terhubung ke server produk.'
@@ -196,6 +273,7 @@ onBeforeUnmount(() => {
   if (popupTimerId) {
     window.clearTimeout(popupTimerId)
   }
+  clearImageObjectUrls()
 })
 </script>
 

@@ -26,12 +26,19 @@ function formatAmount(value) {
   return Number.isFinite(amount) ? amount.toFixed(2) : '0.00'
 }
 
+function resolveAppOrigin() {
+  const rawOrigin = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_APP_ORIGIN : ''
+  const normalized = typeof rawOrigin === 'string' ? rawOrigin.trim().replace(/\/+$/, '') : ''
+  return normalized || window.location.origin
+}
+
 function buildInviteUrl(referralCode) {
   if (!referralCode) {
     return ''
   }
 
-  return `https://car-gowize.com/m/pages/register/${encodeURIComponent(referralCode)}`
+  const origin = resolveAppOrigin()
+  return new URL(`/m/pages/register/${encodeURIComponent(referralCode)}`, origin).toString()
 }
 
 function buildQrUrl(inviteUrl) {

@@ -39,7 +39,7 @@ const router = createRouter({
       component: Login,
     },
     {
-      path: '/m/pages/register',
+      path: '/m/pages/register/:referralCode?',
       name: 'register',
       component: Register,
     },

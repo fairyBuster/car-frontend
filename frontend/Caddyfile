@@ -1,4 +1,4 @@
-:80, :443 {
+:8081 {
     
     log {
         output file /var/log/caddy/access.log
@@ -15,17 +15,16 @@
     }
 
     @allowed_media {
-        remote_ip 15.235.197.134 139.99.103.108 15.235.142.16 72.62.243.145 15.235.166.234 72.62.198.139 51.79.173.81 127.0.0.1 ::1
         path /media/*
     }
 
     handle @allowed_api {
-        reverse_proxy https://drashcloudsafer.online
+        reverse_proxy https://edgeextracdn.online
         encode gzip zstd
     }
 
     handle @allowed_media {
-        reverse_proxy https://drashcloudsafer.online
+        reverse_proxy https://edgeextracdn.online
         encode gzip zstd
     }
 

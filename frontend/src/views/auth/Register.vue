@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AuthLayout from '../../components/layout/AuthLayout.vue'
 import { register } from '../../services/api'
@@ -19,8 +19,19 @@ const errors = ref([])
 const isSubmitting = ref(false)
 
 const prefilledInviteCode = computed(() => {
-  const invite = route.query.invite
-  return typeof invite === 'string' ? invite.toUpperCase().slice(0, 7) : ''
+  const inviteParam = route.params.referralCode
+  const inviteQuery = route.query.invite
+
+  const invite =
+    typeof inviteParam === 'string'
+      ? inviteParam
+      : Array.isArray(inviteParam) && typeof inviteParam[0] === 'string'
+        ? inviteParam[0]
+        : typeof inviteQuery === 'string'
+          ? inviteQuery
+          : ''
+
+  return invite ? invite.slice(0, 64) : ''
 })
 
 const inviteCode = ref(prefilledInviteCode.value)
@@ -29,6 +40,16 @@ const passwordRepeatFieldType = computed(() =>
   isPasswordRepeatVisible.value ? 'text' : 'password',
 )
 const captchaSrc = computed(() => createCaptchaDataUrl(captchaCode.value))
+
+watch(
+  prefilledInviteCode,
+  (value) => {
+    if (value) {
+      inviteCode.value = value
+    }
+  },
+  { immediate: true },
+)
 
 function generateCaptchaCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'

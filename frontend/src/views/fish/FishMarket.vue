@@ -20,6 +20,70 @@ const loadError = ref('')
 const isLoadingFeed = ref(false)
 const feedError = ref('')
 const now = ref(Date.now())
+const imageObjectUrls = new Set()
+
+function normalizeImageSource(value) {
+  if (typeof value !== 'string') {
+    return ''
+  }
+
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return ''
+  }
+
+  const unwrapped = trimmed.replace(/^`+|`+$/g, '').trim()
+  if (!unwrapped) {
+    return ''
+  }
+
+  if (/^https?:\/\//i.test(unwrapped)) {
+    const safeUrl = unwrapped.replace(/^http:\/\//i, 'https://')
+    try {
+      const parsed = new URL(safeUrl)
+      if (parsed.pathname.startsWith('/media/')) {
+        return `${parsed.pathname}${parsed.search}${parsed.hash}`
+      }
+    } catch {
+      return safeUrl
+    }
+    return safeUrl
+  }
+
+  if (unwrapped.startsWith('/media/')) {
+    return unwrapped
+  }
+
+  return unwrapped
+}
+
+function clearImageObjectUrls() {
+  for (const url of imageObjectUrls) {
+    URL.revokeObjectURL(url)
+  }
+  imageObjectUrls.clear()
+}
+
+async function loadImageAsBlobUrl(value) {
+  const src = normalizeImageSource(value)
+  if (!src) {
+    return null
+  }
+
+  try {
+    const response = await fetch(src)
+    if (!response.ok) {
+      return null
+    }
+
+    const blob = await response.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    imageObjectUrls.add(objectUrl)
+    return objectUrl
+  } catch {
+    return null
+  }
+}
 
 const timer = window.setInterval(() => {
   now.value = Date.now()
@@ -161,10 +225,12 @@ function resolveMarketAvailableAt(investment) {
 }
 
 function mapInvestmentToOwnedFish(investment) {
+  const imageUrl = normalizeImageSource(investment.product_image)
   return {
     key: String(investment.id),
     name: investment.product_name || 'Unnamed Investment',
-    image: investment.product_image || '/logo.png',
+    imageUrl,
+    image: '/logo.png',
     imageAlt: investment.product_name || 'Investment image',
     marketRate: Number(investment.profit_rate) || 0,
     marketBalance: Number(investment.total_amount) || 0,
@@ -215,6 +281,7 @@ async function loadInvestments() {
   loadError.value = ''
 
   try {
+    clearImageObjectUrls()
     const items = []
     let page = 1
     let hasNext = true
@@ -242,7 +309,16 @@ async function loadInvestments() {
       safety += 1
     }
 
-    state.value.ownedFish = items.map(mapInvestmentToOwnedFish)
+    const mappedFish = items.map(mapInvestmentToOwnedFish)
+    state.value.ownedFish = await Promise.all(
+      mappedFish.map(async (fish) => {
+        const blobUrl = await loadImageAsBlobUrl(fish.imageUrl)
+        return {
+          ...fish,
+          image: blobUrl || fish.imageUrl || '/logo.png',
+        }
+      }),
+    )
 
     if (!selectedFishKey.value && state.value.ownedFish.length) {
       selectedFishKey.value = state.value.ownedFish[0].key
@@ -302,6 +378,7 @@ watch(selectedFish, (value) => {
 
 onBeforeUnmount(() => {
   window.clearInterval(timer)
+  clearImageObjectUrls()
 })
 </script>
 
