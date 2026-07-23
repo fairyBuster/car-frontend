@@ -31,14 +31,12 @@ const depositMethods = [
   {
     key: 'sitransferhub',
     title: 'Payment 01',
-    subtitle: 'SiTransfer Hub',
-    description: 'Pembayaran deposit melalui QRIS.',
+
   },
   {
     key: 'ppaypros',
     title: 'Payment 02',
-    subtitle: 'Gateway Deposit',
-    description: 'Pembayaran deposit melalui PPay Pros.',
+    
   },
 ]
 
@@ -283,7 +281,7 @@ onMounted(() => {
           />
         </label>
 
-        <div class="deposit-flow-note">
+        <!-- <div class="deposit-flow-note">
           <strong>Metode aktif:</strong>
           <span>
             {{
@@ -292,7 +290,7 @@ onMounted(() => {
                 : 'SiTransfer Hub akan membuat deposit QRIS ke wallet BALANCE_DEPOSIT.'
             }}
           </span>
-        </div>
+        </div> -->
 
         <div v-if="submitError" class="deposit-alert is-error">
           <p>{{ submitError }}</p>
