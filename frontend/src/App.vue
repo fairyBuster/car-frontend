@@ -97,6 +97,7 @@ html,
 body {
   margin: 0;
   padding: 0;
+  height: 100%;
   min-height: 100%;
 }
 
@@ -106,6 +107,7 @@ body {
 }
 
 #app {
+  height: 100%;
   min-height: 100vh;
 }
 

@@ -2,12 +2,6 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import {
-  backProfileHeaderActions,
-  marketNoticeItems,
-  standardFooterItems,
-} from '../../data/mockData'
-
 const router = useRouter()
 const STORAGE_KEY = 'deposit_qris_overview'
 
@@ -39,14 +33,7 @@ function openDepositPayment() {
 </script>
 
 <template>
-  <AppShell
-    body-class="deposit-overview-body"
-    main-class="deposit-overview-main"
-    :header-actions="backProfileHeaderActions"
-    :notice-items="marketNoticeItems"
-    :footer-items="standardFooterItems"
-    active-footer-key="profile"
-  >
+  <main class="deposit-overview-main">
     <section v-if="payment" class="payment-details-section" aria-label="Payment details">
       <div class="payment-details-card">
         <div class="payment-transaction-no">No: {{ payment.orderNo || '-' }}</div>
@@ -75,27 +62,28 @@ function openDepositPayment() {
       </div>
     </section>
 
-         <section id="footer" class="deposit-payment-footer">
-        <img :src="footerBannerSrc" alt="Footer Pay" class="deposit-payment-footer-img" />
-      </section>
+    <section v-if="payment" id="footer" class="deposit-payment-footer">
+      <img :src="footerBannerSrc" alt="Footer Pay" class="deposit-payment-footer-img" />
+    </section>
 
-   
-  </AppShell>
+    <section v-else class="deposit-alert is-error deposit-overview-error" aria-label="Deposit overview error">
+      <p>Data QR deposit tidak ditemukan.</p>
+      <button type="button" class="deposit-submit-btn" @click="backToDeposit">Kembali ke deposit</button>
+    </section>
+  </main>
 </template>
 
 <style scoped>
-.deposit-overview-body {
-  background: #d8d548;
-}
-
 .deposit-overview-main {
-  min-height: 100vh;
-  width: 100%;
-  padding-bottom: 184px;
-  box-sizing: border-box;
+  background: #d8d548;
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  padding: 0;
+  box-sizing: border-box;
   gap: 0;
 }
 
@@ -214,7 +202,7 @@ function openDepositPayment() {
   margin-top: auto;
   min-height: 77px;
   display: flex;
-  margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .deposit-payment-footer-img {
@@ -222,5 +210,11 @@ function openDepositPayment() {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.deposit-overview-error {
+  width: 100%;
+  max-width: 412px;
+  margin: auto auto 0;
 }
 </style>
