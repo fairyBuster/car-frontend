@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import AppShell from '../../components/layout/AppShell.vue'
+
 import {
   backProfileHeaderActions,
   marketNoticeItems,
@@ -70,11 +70,7 @@ function openDepositPayment() {
           >
             <img :src="qrisLogoSrc" alt="QRIS Logo" class="payment-method-logo" />
           </button>
-          <img :src="payment.qrisImage" alt="QRIS payment" class="payment-method-qr" />
-          <p class="payment-method-instruction">
-            {{ payment.instruction || 'Silakan selesaikan pembayaran sebelum waktu kedaluwarsa.' }}
-          </p>
-          <p class="payment-method-expired">Berlaku sampai {{ payment.expiredAt || '-' }}</p>
+         
         </div>
       </div>
     </section>
