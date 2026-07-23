@@ -2,12 +2,6 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 
-import {
-  backProfileHeaderActions,
-  marketNoticeItems,
-  standardFooterItems,
-} from '../../data/mockData'
-
 const router = useRouter()
 const STORAGE_KEY = 'deposit_qris_overview'
 
@@ -36,14 +30,7 @@ function goBack() {
 </script>
 
 <template>
-  <AppShell
-    body-class="deposit-payment-body"
-    main-class="deposit-payment-main"
-    :header-actions="backProfileHeaderActions"
-    :notice-items="marketNoticeItems"
-    :footer-items="standardFooterItems"
-    active-footer-key="profile"
-  >
+  <main class="deposit-payment-main">
     <template v-if="payment">
       <section id="payment-details" class="deposit-payment-section">
         <div class="deposit-payment-card deposit-payment-main-card">
@@ -82,21 +69,24 @@ function goBack() {
       </section>
     </template>
 
-    <section v-else class="deposit-alert is-error" aria-label="Deposit payment error">
+    <section v-else class="deposit-alert is-error deposit-payment-error" aria-label="Deposit payment error">
       <p>Data pembayaran QRIS tidak ditemukan.</p>
       <button type="button" class="deposit-submit-btn" @click="goBack">Kembali</button>
     </section>
-  </AppShell>
+  </main>
 </template>
 
 <style scoped>
-.deposit-payment-body {
-  background: #d8d548;
-}
-
 .deposit-payment-main {
+  background: #d8d548;
   min-height: 100vh;
-  padding-bottom: 184px;
+  min-height: 100dvh;
+  width: 100%;
+  padding: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 0;
 }
 
@@ -261,5 +251,11 @@ function goBack() {
   width: 100%;
   height: auto;
   display: block;
+}
+
+.deposit-payment-error {
+  width: 100%;
+  max-width: 412px;
+  margin: auto auto 0;
 }
 </style>
