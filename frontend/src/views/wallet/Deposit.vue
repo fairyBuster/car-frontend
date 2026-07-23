@@ -18,25 +18,25 @@ const isLoadingOrders = ref(false)
 const orderError = ref('')
 const submitError = ref('')
 const isSubmitting = ref(false)
-const flash = ref({
+const qrisPayment = ref({
   orderNo: '',
   amount: '',
-  paymentLabel: '',
-  networkLabel: '',
-  paymentUrl: '',
-  providerMessage: '',
+  transactionId: '',
+  channel: '',
+  expiredAt: '',
+  instruction: '',
+  qrisImage: '',
+  qrisData: '',
 })
 
 const depositMethods = [
   {
     key: 'sitransferhub',
     title: 'Payment 01',
-
   },
   {
     key: 'ppaypros',
     title: 'Payment 02',
-    
   },
 ]
 
@@ -154,14 +154,29 @@ function resolveProviderMessage(payload) {
   return ''
 }
 
-function applyFlash(method, amount, payload) {
-  flash.value = {
-    orderNo: payload?.order_num || payload?.transaction_id || payload?.pay_order_id || '-',
-    amount: String(amount),
-    paymentLabel: method === 'sitransferhub' ? 'QRIS' : 'PPay Pros',
-    networkLabel: method === 'sitransferhub' ? 'BALANCE_DEPOSIT' : 'BALANCE_DEPOSIT',
-    paymentUrl: payload?.payment_url || '',
-    providerMessage: resolveProviderMessage(payload),
+function resetQrisPayment() {
+  qrisPayment.value = {
+    orderNo: '',
+    amount: '',
+    transactionId: '',
+    channel: '',
+    expiredAt: '',
+    instruction: '',
+    qrisImage: '',
+    qrisData: '',
+  }
+}
+
+function applyQrisPayment(payload) {
+  qrisPayment.value = {
+    orderNo: payload?.order_num || '-',
+    amount: String(payload?.amount || state.value.amount || ''),
+    transactionId: payload?.transaction_id || '-',
+    channel: payload?.channel || 'QRIS',
+    expiredAt: payload?.expired_at || '-',
+    instruction: payload?.instruction || 'Silakan selesaikan pembayaran sebelum waktu kedaluwarsa.',
+    qrisImage: String(payload?.qris_image || '').replace(/[`'"]/g, '').trim(),
+    qrisData: payload?.qris_data || '',
   }
 }
 
@@ -188,6 +203,7 @@ async function loadCompletedOrders() {
 
 async function submitDeposit() {
   submitError.value = ''
+  resetQrisPayment()
 
   const normalizedAmount = formatAmountInput(state.value.amount)
   const amount = Number(normalizedAmount)
@@ -205,7 +221,7 @@ async function submitDeposit() {
     if (state.value.selectedMethod === 'ppaypros') {
       result = await initiatePpayProsDeposit({
         amount,
-        wallet_type: 'BALANCE_DEPOSIT',
+        wallet_type: 'BALANCE',
         wayCode: '',
         extParam: '',
       })
@@ -219,11 +235,22 @@ async function submitDeposit() {
 
     if (!result.ok) {
       submitError.value = resolveProviderMessage(result.data) || 'Deposit gagal dibuat.'
-      applyFlash(state.value.selectedMethod, normalizedAmount, result.data || {})
       return
     }
 
-    applyFlash(state.value.selectedMethod, normalizedAmount, result.data || {})
+    if (state.value.selectedMethod === 'ppaypros') {
+      const paymentUrl = String(result.data?.payment_url || '').trim()
+
+      if (!paymentUrl) {
+        submitError.value = resolveProviderMessage(result.data) || 'Payment 02 gagal diproses.'
+        return
+      }
+
+      window.location.assign(paymentUrl.replace(/[`'"]/g, '').trim())
+      return
+    }
+
+    applyQrisPayment(result.data || {})
     await loadCompletedOrders()
   } catch (error) {
     submitError.value =
@@ -297,17 +324,17 @@ onMounted(() => {
         </div>
 
         <section
-          v-if="flash.orderNo || flash.providerMessage || flash.paymentUrl"
+          v-if="qrisPayment.qrisImage"
           class="deposit-alert is-success"
-          aria-label="Deposit info"
+          aria-label="QRIS payment"
         >
-          <p><strong>Order:</strong> {{ flash.orderNo || '-' }}</p>
-          <p><strong>Jumlah:</strong> Rp{{ flash.amount || '0' }}</p>
-          <p><strong>Metode:</strong> {{ flash.paymentLabel || '-' }}</p>
-          <p v-if="flash.providerMessage"><strong>Info:</strong> {{ flash.providerMessage }}</p>
-          <p v-if="flash.paymentUrl">
-            <a :href="flash.paymentUrl" target="_blank" rel="noopener noreferrer">Buka pembayaran</a>
-          </p>
+          <p><strong>Order:</strong> {{ qrisPayment.orderNo || '-' }}</p>
+          <p><strong>Jumlah:</strong> Rp{{ qrisPayment.amount || '0' }}</p>
+          <p><strong>Transaction ID:</strong> {{ qrisPayment.transactionId || '-' }}</p>
+          <p><strong>Channel:</strong> {{ qrisPayment.channel || 'QRIS' }}</p>
+          <p><strong>Kedaluwarsa:</strong> {{ qrisPayment.expiredAt || '-' }}</p>
+          <p>{{ qrisPayment.instruction }}</p>
+          <img :src="qrisPayment.qrisImage" alt="QRIS payment" class="deposit-qris-image" />
         </section>
 
         <div class="deposit-flow-note">
@@ -437,6 +464,15 @@ onMounted(() => {
   font-size: 0.74rem;
   line-height: 1.4;
   color: #607985;
+}
+
+.deposit-qris-image {
+  display: block;
+  width: min(100%, 260px);
+  margin-top: 12px;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 8px;
 }
 
 @media (max-width: 640px) {
