@@ -21,6 +21,7 @@ const orderError = ref('')
 const submitError = ref('')
 const isSubmitting = ref(false)
 const QRIS_OVERVIEW_STORAGE_KEY = 'deposit_qris_overview'
+const MIN_DEPOSIT_AMOUNT = 20000
 
 const depositMethods = [
   {
@@ -189,8 +190,8 @@ async function submitDeposit() {
   const normalizedAmount = formatAmountInput(state.value.amount)
   const amount = Number(normalizedAmount)
 
-  if (!Number.isFinite(amount) || amount <= 0) {
-    submitError.value = 'Jumlah deposit tidak valid.'
+  if (!Number.isFinite(amount) || amount < MIN_DEPOSIT_AMOUNT) {
+    submitError.value = 'Minimal deposit Rp 20.000.'
     return
   }
 
@@ -282,10 +283,10 @@ onMounted(() => {
             class="deposit-input"
             type="number"
             name="amount"
-            min="10000"
+            :min="MIN_DEPOSIT_AMOUNT"
             step="1"
             inputmode="decimal"
-            placeholder="Example: 100000"
+            placeholder="Minimal 20000"
             required
           />
         </label>

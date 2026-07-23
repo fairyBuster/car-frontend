@@ -75,14 +75,11 @@ function openDepositPayment() {
       </div>
     </section>
 
-    <section v-if="payment" class="footer-section" aria-label="Footer banner">
-      <img :src="footerBannerSrc" alt="Footer Banner" class="footer-image" />
-    </section>
+         <section id="footer" class="deposit-payment-footer">
+        <img :src="footerImgSrc" alt="Footer Pay" class="deposit-payment-footer-img" />
+      </section>
 
-    <section v-else class="deposit-alert is-error" aria-label="Deposit overview error">
-      <p>Data QR deposit tidak ditemukan.</p>
-      <button type="button" class="deposit-submit-btn" @click="backToDeposit">Kembali ke deposit</button>
-    </section>
+   
   </AppShell>
 </template>
 
@@ -223,6 +220,23 @@ function openDepositPayment() {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+}
+
+.deposit-payment-footer {
+  width: 100%;
+  max-width: 412px;
+  margin: 0 auto;
+  box-sizing: border-box;
+} 
+.deposit-payment-footer {
+  margin-top: 97px;
+  display: flex;
+}
+
+.deposit-payment-footer-img {
+  width: 100%;
+  height: auto;
   display: block;
 }
 </style>
