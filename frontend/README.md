@@ -17,4 +17,3 @@ git push origin main
 
 
 Test Deploy to Production
-https://car-gowize.com/m/pages/register/test
