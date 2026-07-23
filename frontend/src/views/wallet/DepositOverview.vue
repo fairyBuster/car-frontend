@@ -76,7 +76,7 @@ function openDepositPayment() {
     </section>
 
          <section id="footer" class="deposit-payment-footer">
-        <img :src="footerImgSrc" alt="Footer Pay" class="deposit-payment-footer-img" />
+        <img :src="footerBannerSrc" alt="Footer Pay" class="deposit-payment-footer-img" />
       </section>
 
    
@@ -89,9 +89,10 @@ function openDepositPayment() {
 }
 
 .deposit-overview-main {
-  min-height: calc(100vh - 160px);
+  min-height: 100vh;
   width: 100%;
   padding-bottom: 184px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -100,7 +101,7 @@ function openDepositPayment() {
 
 .payment-details-section,
 .payment-method-section,
-.footer-section {
+.deposit-payment-footer {
   width: 100%;
   max-width: 412px;
   margin: 0 auto;
@@ -209,34 +210,17 @@ function openDepositPayment() {
   font-size: 0.8rem;
 }
 
-.footer-section {
-  height: 77px;
-  display: flex;
+.deposit-payment-footer {
   margin-top: auto;
-  margin-bottom: 12px;
-}
-
-.footer-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.deposit-payment-footer {
-  width: 100%;
-  max-width: 412px;
-  margin: 0 auto;
-  box-sizing: border-box;
-} 
-.deposit-payment-footer {
-  margin-top: 97px;
+  min-height: 77px;
   display: flex;
+  margin-bottom: 12px;
 }
 
 .deposit-payment-footer-img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
   display: block;
 }
 </style>
