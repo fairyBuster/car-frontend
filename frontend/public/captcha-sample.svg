@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="34" viewBox="0 0 108 34" role="img" aria-labelledby="captchaTitle captchaDesc">
+  <title id="captchaTitle">Verification code</title>
+  <desc id="captchaDesc">Static sample captcha for design preview</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f7fdff"/>
+      <stop offset="100%" stop-color="#e8f8ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="108" height="34" rx="6" fill="url(#bg)"/>
+  <path d="M4 24C16 14 24 28 36 18s20-1 28-6 16-8 26 1 10 2 14 0" fill="none" stroke="#b9ddea" stroke-width="1.3"/>
+  <path d="M2 10c8 6 13-2 21 3s16 9 27 2 20-10 31-6 17 3 25-3" fill="none" stroke="#c9ecd7" stroke-width="1.1"/>
+  <text x="54" y="22" text-anchor="middle" fill="#0f6d87" font-family="Manrope, Segoe UI, sans-serif" font-size="18" font-weight="700" letter-spacing="4">7K2M</text>
+</svg>

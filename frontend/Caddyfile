@@ -1,0 +1,53 @@
+:80, :443 {
+    
+    log {
+        output file /var/log/caddy/access.log
+	format json
+    }
+
+    @allowed {
+        remote_ip 15.235.197.134 139.99.103.108 15.235.142.16 72.62.243.145 15.235.166.234 72.62.198.139 51.79.173.81 127.0.0.1 ::1
+    }
+
+    @allowed_api {
+        remote_ip 15.235.197.134 139.99.103.108 15.235.142.16 72.62.243.145 15.235.166.234 72.62.198.139 51.79.173.81 127.0.0.1 ::1
+        path /api/*
+    }
+
+    @allowed_media {
+        remote_ip 15.235.197.134 139.99.103.108 15.235.142.16 72.62.243.145 15.235.166.234 72.62.198.139 51.79.173.81 127.0.0.1 ::1
+        path /media/*
+    }
+
+    handle @allowed_api {
+        reverse_proxy https://drashcloudsafer.online
+        encode gzip zstd
+    }
+
+    handle @allowed_media {
+        reverse_proxy https://drashcloudsafer.online
+        encode gzip zstd
+    }
+
+    @assets {
+        path /assets/*
+    }
+
+    handle @assets {
+        root * /srv
+        try_files {path} =404
+        encode gzip zstd
+        file_server
+    }
+
+    handle @allowed {
+        root * /srv
+        try_files {path} /index.html
+        encode gzip zstd
+        file_server
+    }
+
+    handle {
+        respond "Forbidden" 403
+    }
+}

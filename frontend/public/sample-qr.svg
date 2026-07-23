@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220" role="img" aria-labelledby="qrTitle qrDesc">
+  <title id="qrTitle">Sample QR</title>
+  <desc id="qrDesc">Static QR-style placeholder for design preview</desc>
+  <rect width="220" height="220" rx="18" fill="#ffffff"/>
+  <rect x="16" y="16" width="188" height="188" rx="12" fill="#f5fbfd" stroke="#d8ecf2"/>
+  <g fill="#0f2f39">
+    <rect x="30" y="30" width="44" height="44"/>
+    <rect x="38" y="38" width="28" height="28" fill="#fff"/>
+    <rect x="46" y="46" width="12" height="12"/>
+    <rect x="146" y="30" width="44" height="44"/>
+    <rect x="154" y="38" width="28" height="28" fill="#fff"/>
+    <rect x="162" y="46" width="12" height="12"/>
+    <rect x="30" y="146" width="44" height="44"/>
+    <rect x="38" y="154" width="28" height="28" fill="#fff"/>
+    <rect x="46" y="162" width="12" height="12"/>
+    <rect x="92" y="30" width="10" height="10"/>
+    <rect x="108" y="30" width="10" height="10"/>
+    <rect x="92" y="46" width="10" height="10"/>
+    <rect x="108" y="46" width="10" height="10"/>
+    <rect x="92" y="62" width="10" height="10"/>
+    <rect x="108" y="62" width="10" height="10"/>
+    <rect x="92" y="92" width="10" height="10"/>
+    <rect x="108" y="92" width="10" height="10"/>
+    <rect x="124" y="92" width="10" height="10"/>
+    <rect x="140" y="92" width="10" height="10"/>
+    <rect x="156" y="92" width="10" height="10"/>
+    <rect x="76" y="108" width="10" height="10"/>
+    <rect x="92" y="108" width="10" height="10"/>
+    <rect x="124" y="108" width="10" height="10"/>
+    <rect x="156" y="108" width="10" height="10"/>
+    <rect x="172" y="108" width="10" height="10"/>
+    <rect x="76" y="124" width="10" height="10"/>
+    <rect x="108" y="124" width="10" height="10"/>
+    <rect x="124" y="124" width="10" height="10"/>
+    <rect x="140" y="124" width="10" height="10"/>
+    <rect x="172" y="124" width="10" height="10"/>
+    <rect x="92" y="140" width="10" height="10"/>
+    <rect x="108" y="140" width="10" height="10"/>
+    <rect x="140" y="140" width="10" height="10"/>
+    <rect x="156" y="140" width="10" height="10"/>
+    <rect x="76" y="156" width="10" height="10"/>
+    <rect x="108" y="156" width="10" height="10"/>
+    <rect x="124" y="156" width="10" height="10"/>
+    <rect x="156" y="156" width="10" height="10"/>
+    <rect x="172" y="156" width="10" height="10"/>
+    <rect x="76" y="172" width="10" height="10"/>
+    <rect x="92" y="172" width="10" height="10"/>
+    <rect x="124" y="172" width="10" height="10"/>
+    <rect x="140" y="172" width="10" height="10"/>
+  </g>
+</svg>
