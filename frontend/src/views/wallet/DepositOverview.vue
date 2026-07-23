@@ -120,8 +120,8 @@ function openDepositPayment() {
 
 .payment-divider {
   width: 100%;
-  height: 0.5px;
-  background: #000000;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
   margin: 18px 0;
 }
 
