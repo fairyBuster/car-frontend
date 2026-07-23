@@ -480,26 +480,9 @@ const fishMarketData = {
 }
 
 const depositData = {
-  selectedNetwork: 'trc20',
+  selectedMethod: 'sitransferhub',
   amount: '',
-  wallets: [
-    {
-      networkKey: 'trc20',
-      networkLabel: 'TRC20',
-      walletAddress: 'TWsF4W8D4S8J2QW6TRC20AQUA0001',
-      qrUrl: '/sample-qr.svg',
-    },
-    {
-      networkKey: 'beb20',
-      networkLabel: 'BEB20',
-      walletAddress: '0xAquaBeb20Wallet000000001',
-      qrUrl: '/sample-qr.svg',
-    },
-  ],
-  orders: [
-    { orderNo: 'AQD-20260721-001', paymentLabel: 'USDT', networkLabel: 'TRC20', status: 'paid', amount: '50.00', createdAt: '2026-07-21 10:25' },
-    { orderNo: 'AQD-20260720-004', paymentLabel: 'USDT', networkLabel: 'BEB20', status: 'pending', amount: '25.00', createdAt: '2026-07-20 18:40' },
-  ],
+  orders: [],
 }
 
 const withdrawalData = {

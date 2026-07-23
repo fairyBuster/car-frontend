@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import AppShell from '../../components/layout/AppShell.vue'
 import {
   backProfileHeaderActions,
@@ -7,27 +7,43 @@ import {
   marketNoticeItems,
   standardFooterItems,
 } from '../../data/mockData'
-import { getDepositTransactions } from '../../services/api'
+import {
+  getDepositTransactions,
+  initiatePpayProsDeposit,
+  initiateSiTransferHubDeposit,
+} from '../../services/api'
 
 const state = ref(getDepositData())
-const copied = ref(false)
 const isLoadingOrders = ref(false)
 const orderError = ref('')
+const submitError = ref('')
+const isSubmitting = ref(false)
 const flash = ref({
-  orderNo: 'AQD-20260721-001',
-  amount: '50.00',
-  paymentLabel: 'USDT',
-  networkLabel: 'TRC20',
+  orderNo: '',
+  amount: '',
+  paymentLabel: '',
+  networkLabel: '',
+  paymentUrl: '',
+  providerMessage: '',
 })
 
-const selectedWallet = computed(
-  () =>
-    state.value.wallets.find((wallet) => wallet.networkKey === state.value.selectedNetwork) ??
-    state.value.wallets[0],
-)
+const depositMethods = [
+  {
+    key: 'sitransferhub',
+    title: 'Payment 01',
+    subtitle: 'SiTransfer Hub',
+    description: 'Pembayaran deposit melalui QRIS.',
+  },
+  {
+    key: 'ppaypros',
+    title: 'Payment 02',
+    subtitle: 'Gateway Deposit',
+    description: 'Pembayaran deposit melalui PPay Pros.',
+  },
+]
 
-function setActiveNetwork(key) {
-  state.value.selectedNetwork = key
+function setActiveMethod(key) {
+  state.value.selectedMethod = key
 }
 
 function extractTransactions(payload) {
@@ -44,6 +60,17 @@ function extractTransactions(payload) {
   }
 
   return []
+}
+
+function formatAmountInput(value) {
+  const raw = String(value || '').replace(/,/g, '').trim()
+  const amount = Number(raw)
+
+  if (!Number.isFinite(amount)) {
+    return ''
+  }
+
+  return String(Math.trunc(amount))
 }
 
 function formatDate(value) {
@@ -82,14 +109,61 @@ function sanitizeDepositOrderNo(value) {
 
 function mapDepositOrder(item) {
   const rawOrderNo = item.transaction_id || item.trx_id || `DEP-${item.id}`
+
+  const normalizedStatus =
+    item?.status === 'COMPLETED'
+      ? 'paid'
+      : item?.status === 'REJECTED' || item?.status === 'FAILED'
+        ? 'cancelled'
+        : 'pending'
+
   return {
     orderNo: rawOrderNo,
     displayOrderNo: sanitizeDepositOrderNo(rawOrderNo),
     paymentLabel: item.currency_code || item.original_currency_code || 'DEPOSIT',
     networkLabel: item.wallet_type || item.bank_name || '-',
-    status: 'paid',
+    status: normalizedStatus,
     amount: item.amount || '0.00',
     createdAt: formatDate(item.created_at),
+  }
+}
+
+function resolveProviderMessage(payload) {
+  const providerData = payload?.provider?.data
+
+  if (providerData?.errMsg) {
+    return String(providerData.errMsg)
+  }
+
+  if (payload?.detail) {
+    return String(payload.detail)
+  }
+
+  if (payload?.message) {
+    return String(payload.message)
+  }
+
+  if (payload && typeof payload === 'object') {
+    const firstError = Object.values(payload).find(
+      (value) => Array.isArray(value) && value.length && typeof value[0] === 'string',
+    )
+
+    if (firstError) {
+      return String(firstError[0])
+    }
+  }
+
+  return ''
+}
+
+function applyFlash(method, amount, payload) {
+  flash.value = {
+    orderNo: payload?.order_num || payload?.transaction_id || payload?.pay_order_id || '-',
+    amount: String(amount),
+    paymentLabel: method === 'sitransferhub' ? 'QRIS' : 'PPay Pros',
+    networkLabel: method === 'sitransferhub' ? 'BALANCE_DEPOSIT' : 'BALANCE_DEPOSIT',
+    paymentUrl: payload?.payment_url || '',
+    providerMessage: resolveProviderMessage(payload),
   }
 }
 
@@ -114,15 +188,51 @@ async function loadCompletedOrders() {
   }
 }
 
-async function copyWallet() {
+async function submitDeposit() {
+  submitError.value = ''
+
+  const normalizedAmount = formatAmountInput(state.value.amount)
+  const amount = Number(normalizedAmount)
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    submitError.value = 'Jumlah deposit tidak valid.'
+    return
+  }
+
+  isSubmitting.value = true
+
   try {
-    await navigator.clipboard.writeText(selectedWallet.value.walletAddress)
-    copied.value = true
-    window.setTimeout(() => {
-      copied.value = false
-    }, 1500)
-  } catch {
-    copied.value = false
+    let result
+
+    if (state.value.selectedMethod === 'ppaypros') {
+      result = await initiatePpayProsDeposit({
+        amount,
+        wallet_type: 'BALANCE_DEPOSIT',
+        wayCode: '',
+        extParam: '',
+      })
+    } else {
+      result = await initiateSiTransferHubDeposit({
+        amount: normalizedAmount,
+        wallet_type: 'BALANCE_DEPOSIT',
+        channel: 'QRIS',
+      })
+    }
+
+    if (!result.ok) {
+      submitError.value = resolveProviderMessage(result.data) || 'Deposit gagal dibuat.'
+      applyFlash(state.value.selectedMethod, normalizedAmount, result.data || {})
+      return
+    }
+
+    applyFlash(state.value.selectedMethod, normalizedAmount, result.data || {})
+    await loadCompletedOrders()
+  } catch (error) {
+    submitError.value =
+      error instanceof Error ? error.message : 'Tidak bisa terhubung ke server deposit.'
+  }
+  finally {
+    isSubmitting.value = false
   }
 }
 
@@ -140,10 +250,22 @@ onMounted(() => {
     :footer-items="standardFooterItems"
     active-footer-key="profile"
   >
-
     <section class="deposit-panel" aria-label="Deposit form">
-      <form class="deposit-form" novalidate @submit.prevent>
-        <input type="hidden" name="payment_method" value="usdt" />
+      <form class="deposit-form" novalidate @submit.prevent="submitDeposit">
+        <div class="deposit-methods" aria-label="Metode deposit">
+          <button
+            v-for="method in depositMethods"
+            :key="method.key"
+            type="button"
+            class="deposit-method-card"
+            :class="{ 'is-active': state.selectedMethod === method.key }"
+            @click="setActiveMethod(method.key)"
+          >
+            <strong>{{ method.title }}</strong>
+            <span>{{ method.subtitle }}</span>
+            <p>{{ method.description }}</p>
+          </button>
+        </div>
 
         <label class="deposit-field" for="deposit-amount">
           <span class="deposit-field-label">Deposit Amount</span>
@@ -153,24 +275,53 @@ onMounted(() => {
             class="deposit-input"
             type="number"
             name="amount"
-            min="10"
-            step="0.01"
+            min="10000"
+            step="1"
             inputmode="decimal"
-            placeholder="Example: 10000"
+            placeholder="Example: 100000"
             required
           />
         </label>
 
-      
+        <div class="deposit-flow-note">
+          <strong>Metode aktif:</strong>
+          <span>
+            {{
+              state.selectedMethod === 'ppaypros'
+                ? 'PPay Pros akan mengirim order deposit menggunakan wallet BALANCE_DEPOSIT.'
+                : 'SiTransfer Hub akan membuat deposit QRIS ke wallet BALANCE_DEPOSIT.'
+            }}
+          </span>
+        </div>
+
+        <div v-if="submitError" class="deposit-alert is-error">
+          <p>{{ submitError }}</p>
+        </div>
+
+        <section
+          v-if="flash.orderNo || flash.providerMessage || flash.paymentUrl"
+          class="deposit-alert is-success"
+          aria-label="Deposit info"
+        >
+          <p><strong>Order:</strong> {{ flash.orderNo || '-' }}</p>
+          <p><strong>Jumlah:</strong> Rp{{ flash.amount || '0' }}</p>
+          <p><strong>Metode:</strong> {{ flash.paymentLabel || '-' }}</p>
+          <p v-if="flash.providerMessage"><strong>Info:</strong> {{ flash.providerMessage }}</p>
+          <p v-if="flash.paymentUrl">
+            <a :href="flash.paymentUrl" target="_blank" rel="noopener noreferrer">Buka pembayaran</a>
+          </p>
+        </section>
 
         <div class="deposit-flow-note">
           <strong>Flow:</strong>
           <span>
-            Enter the amount, choose the network, complete the transfer, and submit the request for review. Balance is not added until approval.
+            Masukkan jumlah, pilih metode deposit, buat order, lalu selesaikan pembayaran sesuai instruksi provider.
           </span>
         </div>
 
-        <button type="submit" class="deposit-submit-btn">Submit Deposit Request</button>
+        <button type="submit" class="deposit-submit-btn" :disabled="isSubmitting">
+          {{ isSubmitting ? 'Memproses deposit...' : 'Submit Deposit Request' }}
+        </button>
       </form>
     </section>
 
@@ -249,10 +400,55 @@ onMounted(() => {
   box-shadow: 0 18px 34px rgba(28, 89, 109, 0.09);
 }
 
+.deposit-methods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.deposit-method-card {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(19, 118, 146, 0.12);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 249, 252, 0.98) 100%);
+  padding: 14px 12px;
+  color: #123045;
+}
+
+.deposit-method-card.is-active {
+  border-color: rgba(15, 140, 130, 0.42);
+  box-shadow: 0 12px 22px rgba(11, 112, 104, 0.12);
+}
+
+.deposit-method-card strong {
+  display: block;
+  font-size: 0.92rem;
+}
+
+.deposit-method-card span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: #0f7b87;
+  font-weight: 700;
+}
+
+.deposit-method-card p {
+  margin: 8px 0 0;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: #607985;
+}
+
 @media (max-width: 640px) {
   .deposit-panel {
     padding: 14px 12px;
     border-radius: 22px;
+  }
+
+  .deposit-methods {
+    grid-template-columns: 1fr;
   }
 }
 </style>

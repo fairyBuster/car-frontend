@@ -79,6 +79,14 @@ export function getDepositTransactions(query) {
   return get('/api/deposits/transactions/', query)
 }
 
+export function initiateSiTransferHubDeposit(payload) {
+  return post('/api/deposits/sitransferhub/initiate/', payload)
+}
+
+export function initiatePpayProsDeposit(payload) {
+  return post('/api/deposits/ppaypros/initiate/', payload)
+}
+
 export function getWithdrawals(query) {
   return get('/api/withdraw/', query)
 }
