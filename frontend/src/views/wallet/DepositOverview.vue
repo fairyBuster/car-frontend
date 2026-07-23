@@ -92,7 +92,12 @@ function openDepositPayment() {
 }
 
 .deposit-overview-main {
+  min-height: calc(100vh - 160px);
+  width: 100%;
   padding-bottom: 184px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 0;
 }
 
@@ -210,6 +215,7 @@ function openDepositPayment() {
 .footer-section {
   height: 77px;
   display: flex;
+  margin-top: auto;
   margin-bottom: 12px;
 }
 

@@ -131,7 +131,7 @@ function goBack() {
 
 .deposit-payment-transaction-no {
   color: #7f7f7f;
-  font-size: 12px;
+  font-size: 14px;
   text-align: center;
 }
 
