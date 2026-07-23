@@ -12,3 +12,9 @@ echo "// test deploy" >> frontend/vite.config.js
 git add frontend/vite.config.js
 git commit -m "test: deploy to production"
 git push origin main
+
+
+
+
+Test Deploy to Production
+https://car-gowize.com/m/pages/register/test
