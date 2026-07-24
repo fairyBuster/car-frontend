@@ -31,14 +31,12 @@ function isLocalHostname(hostname) {
   )
 }
 
-
-
 function redirectToMobileSubdomain() {
   if (typeof window === 'undefined') {
     return
   }
 
-  const { hostname, protocol, pathname, search, hash } = window.location
+  const { hostname, protocol } = window.location
 
   if (!hostname || isLocalHostname(hostname)) {
     return
@@ -50,7 +48,7 @@ function redirectToMobileSubdomain() {
     return
   }
 
-  const targetUrl = `${protocol}`
+  const targetUrl = `${protocol}//${mobileHostname}/`
 
   isRedirectingToMobile.value = true
   window.location.replace(targetUrl)
