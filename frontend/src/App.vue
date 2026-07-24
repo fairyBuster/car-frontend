@@ -1,13 +1,17 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
 
+const route = useRoute()
 const viewportWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 0)
 const isFinePointer = ref(
   typeof window !== 'undefined' ? window.matchMedia('(pointer: fine)').matches : false,
 )
+const routeRefreshKey = ref(0)
+const lastRouteRefreshAt = ref(0)
 
 const isDesktopBlocked = computed(() => viewportWidth.value >= 768 && isFinePointer.value)
+const activeRouteKey = computed(() => `${route.fullPath}:${routeRefreshKey.value}`)
 
 function updateDeviceState() {
   viewportWidth.value = window.innerWidth
@@ -44,17 +48,52 @@ function onContextMenu(event) {
   event.preventDefault()
 }
 
+function refreshActiveRoute() {
+  const now = Date.now()
+
+  if (now - lastRouteRefreshAt.value < 800) {
+    return
+  }
+
+  lastRouteRefreshAt.value = now
+  routeRefreshKey.value += 1
+}
+
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible') {
+    refreshActiveRoute()
+  }
+}
+
+function onWindowFocus() {
+  if (document.visibilityState === 'visible') {
+    refreshActiveRoute()
+  }
+}
+
+function onPageShow(event) {
+  if (event.persisted) {
+    refreshActiveRoute()
+  }
+}
+
 onMounted(() => {
   updateDeviceState()
   window.addEventListener('resize', updateDeviceState)
   window.addEventListener('keydown', onKeydown)
   window.addEventListener('contextmenu', onContextMenu)
+  window.addEventListener('focus', onWindowFocus)
+  window.addEventListener('pageshow', onPageShow)
+  document.addEventListener('visibilitychange', onVisibilityChange)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateDeviceState)
   window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('contextmenu', onContextMenu)
+  window.removeEventListener('focus', onWindowFocus)
+  window.removeEventListener('pageshow', onPageShow)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 })
 </script>
 
@@ -69,7 +108,9 @@ onBeforeUnmount(() => {
       </p>
     </section>
   </main>
-  <RouterView v-else />
+  <RouterView v-else v-slot="{ Component }">
+    <component :is="Component" :key="activeRouteKey" />
+  </RouterView>
 </template>
 
 <style>
