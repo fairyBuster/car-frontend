@@ -50,7 +50,7 @@ function redirectToMobileSubdomain() {
     return
   }
 
-  const targetUrl = `${protocol}//${mobileHostname}${pathname}${search}${hash}`
+  const targetUrl = `${protocol}`
 
   isRedirectingToMobile.value = true
   window.location.replace(targetUrl)
