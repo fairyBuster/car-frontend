@@ -11,6 +11,34 @@ const AUTH_ERROR_PATTERNS = [
   /authorization/i,
   /jwt/i,
 ]
+const LOGIN_ROUTE = '/m/pages/sign'
+const PUBLIC_API_PATHS = new Set(['/api/auth/jwt/login/', '/api/auth/register/'])
+let isRedirectingToLogin = false
+
+function clearAuthStorage() {
+  localStorage.removeItem('auth_access_token')
+  localStorage.removeItem('auth_refresh_token')
+  localStorage.removeItem('auth_user')
+  localStorage.removeItem('auth_phone')
+  localStorage.removeItem('selected_withdraw_bank_id')
+  sessionStorage.clear()
+}
+
+function redirectToLogin() {
+  if (isRedirectingToLogin || typeof window === 'undefined') {
+    return
+  }
+
+  isRedirectingToLogin = true
+
+  const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
+  const loginUrl =
+    currentPath && currentPath !== LOGIN_ROUTE
+      ? `${LOGIN_ROUTE}?redirect=${encodeURIComponent(currentPath)}`
+      : LOGIN_ROUTE
+
+  window.location.replace(loginUrl)
+}
 
 function sanitizeApiErrorMessage(value, status) {
   const message = String(value || '').trim()
@@ -44,6 +72,15 @@ function sanitizeApiErrorPayload(value, status) {
   )
 }
 
+function handleUnauthorizedResponse(path, status) {
+  if (status !== 401 || PUBLIC_API_PATHS.has(path)) {
+    return
+  }
+
+  clearAuthStorage()
+  redirectToLogin()
+}
+
 function buildHeaders(headers = {}) {
   const accessToken = localStorage.getItem('auth_access_token')
 
@@ -70,6 +107,8 @@ async function request(path, options = {}) {
   const response = await fetch(path, options)
   const { data, raw } = await readApiResponse(response)
   const normalizedData = response.ok ? data : sanitizeApiErrorPayload(data, response.status)
+
+  handleUnauthorizedResponse(path, response.status)
 
   return {
     ok: response.ok,

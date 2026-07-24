@@ -203,7 +203,7 @@ async function submitDeposit() {
     if (state.value.selectedMethod === 'ppaypros') {
       result = await initiatePpayProsDeposit({
         amount,
-        wallet_type: 'BALANCE',
+        wallet_type: 'BALANCE_DEPOSIT',
         wayCode: '',
         extParam: '',
       })
