@@ -84,19 +84,23 @@ function formatDate(value) {
   return `${yyyy}-${mm}-${dd} ${hours}:${minutes}`
 }
 
-function sanitizeDepositOrderNo(value) {
-  const raw = String(value || '').trim()
-  if (!raw) {
+function formatDepositOrderDisplay(value) {
+  if (!value) {
     return '-'
   }
 
-  const trimmed = raw.replace(/^DEP-/i, '')
-  const lastDashIndex = trimmed.lastIndexOf('-')
-  if (lastDashIndex > 0) {
-    return trimmed.slice(0, lastDashIndex)
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return '-'
   }
 
-  return trimmed
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+
+  return `${yyyy}${mm}${dd}${hours}`
 }
 
 function mapDepositOrder(item) {
@@ -111,7 +115,7 @@ function mapDepositOrder(item) {
 
   return {
     orderNo: rawOrderNo,
-    displayOrderNo: sanitizeDepositOrderNo(rawOrderNo),
+    displayOrderNo: formatDepositOrderDisplay(item.created_at),
     paymentLabel: item.currency_code || item.original_currency_code || 'DEPOSIT',
     networkLabel: item.wallet_type || item.bank_name || '-',
     status: normalizedStatus,
