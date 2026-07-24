@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 
 const route = useRoute()
@@ -9,6 +9,9 @@ const isFinePointer = ref(
 )
 const routeRefreshKey = ref(0)
 const lastRouteRefreshAt = ref(0)
+const pointerMediaQuery =
+  typeof window !== 'undefined' ? window.matchMedia('(pointer: fine)') : null
+const isRedirectingToMobile = ref(false)
 
 const isDesktopBlocked = computed(() => viewportWidth.value >= 768 && isFinePointer.value)
 const activeRouteKey = computed(() => `${route.fullPath}:${routeRefreshKey.value}`)
@@ -16,6 +19,48 @@ const activeRouteKey = computed(() => `${route.fullPath}:${routeRefreshKey.value
 function updateDeviceState() {
   viewportWidth.value = window.innerWidth
   isFinePointer.value = window.matchMedia('(pointer: fine)').matches
+}
+
+function isLocalHostname(hostname) {
+  const normalized = String(hostname || '').toLowerCase()
+  return (
+    normalized === 'localhost' ||
+    normalized === '127.0.0.1' ||
+    normalized === '0.0.0.0' ||
+    normalized.endsWith('.local')
+  )
+}
+
+
+
+function redirectToMobileSubdomain() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const { hostname, protocol, pathname, search, hash } = window.location
+
+  if (!hostname || isLocalHostname(hostname)) {
+    return
+  }
+
+  const mobileHostname = 'google.com'
+
+  if (hostname === mobileHostname) {
+    return
+  }
+
+  const targetUrl = `${protocol}//${mobileHostname}${pathname}${search}${hash}`
+
+  isRedirectingToMobile.value = true
+  window.location.replace(targetUrl)
+}
+function onPointerMediaChange() {
+  updateDeviceState()
+}
+
+function onViewportResize() {
+  updateDeviceState()
 }
 
 function shouldBlockShortcut(event) {
@@ -77,9 +122,36 @@ function onPageShow(event) {
   }
 }
 
+watchEffect(() => {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  if (isRedirectingToMobile.value) {
+    return
+  }
+
+  if (!isDesktopBlocked.value) {
+    redirectToMobileSubdomain()
+  }
+})
+
 onMounted(() => {
   updateDeviceState()
-  window.addEventListener('resize', updateDeviceState)
+  window.addEventListener('resize', onViewportResize)
+  window.addEventListener('orientationchange', onViewportResize)
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', onViewportResize)
+  }
+
+  if (pointerMediaQuery) {
+    if (typeof pointerMediaQuery.addEventListener === 'function') {
+      pointerMediaQuery.addEventListener('change', onPointerMediaChange)
+    } else if (typeof pointerMediaQuery.addListener === 'function') {
+      pointerMediaQuery.addListener(onPointerMediaChange)
+    }
+  }
   window.addEventListener('keydown', onKeydown)
   window.addEventListener('contextmenu', onContextMenu)
   window.addEventListener('focus', onWindowFocus)
@@ -88,7 +160,20 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateDeviceState)
+  window.removeEventListener('resize', onViewportResize)
+  window.removeEventListener('orientationchange', onViewportResize)
+
+  if (window.visualViewport) {
+    window.visualViewport.removeEventListener('resize', onViewportResize)
+  }
+
+  if (pointerMediaQuery) {
+    if (typeof pointerMediaQuery.removeEventListener === 'function') {
+      pointerMediaQuery.removeEventListener('change', onPointerMediaChange)
+    } else if (typeof pointerMediaQuery.removeListener === 'function') {
+      pointerMediaQuery.removeListener(onPointerMediaChange)
+    }
+  }
   window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('contextmenu', onContextMenu)
   window.removeEventListener('focus', onWindowFocus)
