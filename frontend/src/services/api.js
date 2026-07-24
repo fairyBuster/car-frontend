@@ -1,5 +1,49 @@
 import { readApiResponse } from '../utils/apiResponse'
 
+const AUTH_ERROR_PATTERNS = [
+  /given token not valid/i,
+  /token not valid/i,
+  /token is invalid/i,
+  /token is expired/i,
+  /authentication credentials were not provided/i,
+  /not authenticated/i,
+  /invalid token/i,
+  /authorization/i,
+  /jwt/i,
+]
+
+function sanitizeApiErrorMessage(value, status) {
+  const message = String(value || '').trim()
+
+  if (!message) {
+    return message
+  }
+
+  if (status === 401 || AUTH_ERROR_PATTERNS.some((pattern) => pattern.test(message))) {
+    return 'Sesi Anda telah berakhir. Silakan login kembali.'
+  }
+
+  return message
+}
+
+function sanitizeApiErrorPayload(value, status) {
+  if (typeof value === 'string') {
+    return sanitizeApiErrorMessage(value, status)
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeApiErrorPayload(item, status))
+  }
+
+  if (!value || typeof value !== 'object') {
+    return value
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [key, sanitizeApiErrorPayload(item, status)]),
+  )
+}
+
 function buildHeaders(headers = {}) {
   const accessToken = localStorage.getItem('auth_access_token')
 
@@ -25,11 +69,12 @@ function buildUrl(path, query = {}) {
 async function request(path, options = {}) {
   const response = await fetch(path, options)
   const { data, raw } = await readApiResponse(response)
+  const normalizedData = response.ok ? data : sanitizeApiErrorPayload(data, response.status)
 
   return {
     ok: response.ok,
     status: response.status,
-    data,
+    data: normalizedData,
     raw,
   }
 }
