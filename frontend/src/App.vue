@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 
 const route = useRoute()
@@ -12,9 +12,16 @@ const lastRouteRefreshAt = ref(0)
 const pointerMediaQuery =
   typeof window !== 'undefined' ? window.matchMedia('(pointer: fine)') : null
 const isRedirectingToMobile = ref(false)
+const wasDesktopBlocked = ref(null)
 
 const isDesktopBlocked = computed(() => viewportWidth.value >= 768 && isFinePointer.value)
 const activeRouteKey = computed(() => `${route.fullPath}:${routeRefreshKey.value}`)
+
+// Redirect rule:
+// - Default behavior: mobile stays on whatever domain it opened (no redirect on initial mobile access).
+// - Only when a session changes from "desktop blocked" -> "mobile" we redirect to the mobile subdomain.
+// - Redirect is limited to the production desktop domain(s) below, and preserves path/query/hash.
+const MOBILE_HOSTNAME = 'google.com'
 
 function updateDeviceState() {
   viewportWidth.value = window.innerWidth
@@ -36,19 +43,19 @@ function redirectToMobileSubdomain() {
     return
   }
 
-  const { hostname, protocol } = window.location
+  const { hostname, protocol, pathname, search, hash } = window.location
 
+  // Do not redirect in local/dev environments.
   if (!hostname || isLocalHostname(hostname)) {
     return
   }
 
-  const mobileHostname = 'google.com'
-
-  if (hostname === mobileHostname) {
+  // Prevent redirect loop if already on mobile subdomain.
+  if (!MOBILE_HOSTNAME || hostname === MOBILE_HOSTNAME) {
     return
   }
 
-  const targetUrl = `${protocol}//${mobileHostname}/`
+  const targetUrl = `${protocol}//${MOBILE_HOSTNAME}/`
 
   isRedirectingToMobile.value = true
   window.location.replace(targetUrl)
@@ -120,22 +127,33 @@ function onPageShow(event) {
   }
 }
 
-watchEffect(() => {
-  if (typeof window === 'undefined') {
-    return
-  }
+watch(
+  isDesktopBlocked,
+  (nextValue, previousValue) => {
+    if (typeof window === 'undefined') {
+      return
+    }
 
-  if (isRedirectingToMobile.value) {
-    return
-  }
+    if (isRedirectingToMobile.value) {
+      return
+    }
 
-  if (!isDesktopBlocked.value) {
-    redirectToMobileSubdomain()
-  }
-})
+    // Redirect only on transition: desktop (blocked) -> mobile (allowed)
+    // This ensures initial mobile access never redirects anywhere.
+    if (previousValue === true && nextValue === false) {
+      redirectToMobileSubdomain()
+    }
+  },
+  { immediate: false },
+)
 
 onMounted(() => {
   updateDeviceState()
+  wasDesktopBlocked.value = isDesktopBlocked.value
+  // Keep device detection up-to-date:
+  // - resize/orientationchange: layout mode changes
+  // - visualViewport.resize: mobile address bar / keyboard changes
+  // - pointer media query: fine pointer (mouse) vs coarse pointer (touch)
   window.addEventListener('resize', onViewportResize)
   window.addEventListener('orientationchange', onViewportResize)
 
